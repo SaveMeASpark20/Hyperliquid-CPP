@@ -1,0 +1,40 @@
+cmake_minimum_required(VERSION 3.15)
+project(Hyperliquid-CPP VERSION 1.0.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# --- 1. Find Dependencies ---
+find_package(Boost REQUIRED COMPONENTS system)
+find_package(OpenSSL REQUIRED)
+find_package(nlohmann_json REQUIRED)
+
+# --- 2. Create the Library Target ---
+# This allows others to use your OrderBook logic in their own apps
+add_library(hyperliquid_lib STATIC 
+    src/OrderBook.cpp
+)
+
+# Tell the compiler where the .h files are
+target_include_directories(hyperliquid_lib PUBLIC 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+# Link the library to its dependencies
+target_link_libraries(hyperliquid_lib PUBLIC 
+    Boost::system 
+    OpenSSL::SSL 
+    OpenSSL::Crypto 
+    nlohmann_json::nlohmann_json
+)
+
+# --- 3. Create the Example/Main App ---
+add_executable(hl_app src/main.cpp)
+target_link_libraries(hl_app PRIVATE hyperliquid_lib)
+
+# Windows-specific networking libraries
+if(WIN32)
+    target_link_libraries(hyperliquid_lib PUBLIC ws2_32 crypt32)
+    target_compile_definitions(hyperliquid_lib PUBLIC NOMINMAX)
+endif()

@@ -1,0 +1,22 @@
+# Visual Studio temporary files
+.vs/
+out/
+build/
+bin/
+obj/
+*.user
+*.sln
+*.vcxproj
+*.filters
+*.aps
+*.pdb
+
+# Compiled binaries
+*.exe
+*.lib
+*.a
+*.dll
+
+# OS files
+.DS_Store
+Thumbs.db

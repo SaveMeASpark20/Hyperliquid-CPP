@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="Hyperliquid-CPP/Hyperliquid-CPP.vcxproj" Id="78fac2b5-a88e-4f5a-a80d-576576319885" />
+</Solution>
