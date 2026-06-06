@@ -10,7 +10,6 @@ A high-performance C++ implementation for interacting with the Hyperliquid excha
 ## 🛠 Project Structure
 * `include/`: Header files (API definitions)
 * `src/`: Implementation files
-* `main.cpp`: Entry point and WebSocket connection logic
 
 ## 📦 Requirements
 * C++17 Compiler

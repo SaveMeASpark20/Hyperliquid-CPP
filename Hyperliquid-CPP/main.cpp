@@ -1,92 +1,205 @@
-#include <boost/beast/core.hpp>
-#include <boost/beast/ssl.hpp>
-#include <boost/beast/websocket.hpp>
-#include <boost/beast/websocket/ssl.hpp>
-#include <boost/asio/connect.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/ssl/context.hpp>
-#include <nlohmann/json.hpp>
+#include "WSConnect.h"
+#include "HyperliquidSigner.h" 
 #include <iostream>
-#include <string>
-#include <secp256k1.h>
+#include <iomanip>
+#include <curl/curl.h>
 
-#include <OrderBook.h>
+#include <secp256k1.h>
+#include <boost/beast/core.hpp>
+#include <nlohmann/json.hpp>
+
+#include <array>
+#include <cstring>
+#include <algorithm>
+
+#include <chrono>
+#include <cstdint>
+
+#include <iomanip>
+
+#include <fstream>
+#define MODE_TEST 1 
+
 
 #ifdef _WIN32
-#pragma comment(lib, "libssl.lib")
-#pragma comment(lib, "libcrypto.lib")
-#pragma comment(lib, "crypt32.lib")
-#pragma comment(lib, "ws2_32.lib")
+    #pragma comment(lib, "libcurl.lib")
+    #pragma comment(lib, "libssl.lib")
+    #pragma comment(lib, "libcrypto.lib")
+    #pragma comment(lib, "crypt32.lib")
+    #pragma comment(lib, "ws2_32.lib")
+    #pragma comment(lib, "cryptopp.lib") 
+    #pragma comment(lib, "Normaliz.lib") 
+    #pragma comment(lib, "Wldap32.lib") 
+    #pragma comment(lib, "advapi32.lib") 
 #endif
 
-
-namespace beast = boost::beast;
-namespace http = beast::http;
-namespace websocket = beast::websocket;
-namespace net = boost::asio;
-namespace ssl = net::ssl;
-using tcp = net::ip::tcp;
 using json = nlohmann::json;
 
 
 
+void print_hex(const std::vector<uint8_t>& vec) {
+    for (uint8_t b : vec) {
+        std::cout << std::setw(2) << std::setfill('0') << std::hex << (int)b;
+    }
+    std::cout << std::endl;
+}
+
+
+
+using json = nlohmann::json;
+
+struct Config {
+    std::string private_key;
+    std::string wallet_address;
+};
+
+Config loadConfig() {
+    std::ifstream file("config.json");
+
+    if (!file.is_open()) {
+        throw std::runtime_error("Cannot open config.json");
+    }
+
+    json j;
+    file >> j;
+
+    return {
+        j["private_key"],
+        j["wallet_address"]
+    };
+}
+
 int main()
 {
-	try
-	{
-		const std::string host = "api.hyperliquid.xyz";
-		const std::string port = "443";
+    try
+    {
+        // =====================================================
+        // 1. Create signer
+        // =====================================================
 
-		net::io_context ioc;
-		ssl::context ctx{ ssl::context::tlsv12_client };
+        HyperliquidSigner signer;
+        Config cfg = loadConfig();
 
-		// DNS Resolver: Asks a DNS server to turn "api.hyperliquid.xyz" into an IP address. 
-		// Usually takes 1 round trip.
-		tcp::resolver resolver{ ioc };
-		websocket::stream<beast::ssl_stream<tcp::socket>> ws{ ioc, ctx };
+        // =====================================================
+        // 2. Wallet
+        // =====================================================
 
-		auto const results = resolver.resolve(host, port);
+        LocalAccount wallet;
 
-		// TCP Connect: Establishes a reliable "pipe" using the 3-Way Handshake. 
-// Takes 1.5 to 3 round trips. Guarantees no data is lost or out of order.
-		net::connect(beast::get_lowest_layer(ws), results.begin(), results.end());
+        wallet.address = cfg.wallet_address;
 
-		if (!SSL_set_tlsext_host_name(ws.next_layer().native_handle(), host.c_str()))
-		{
-			throw beast::system_error(
-				beast::error_code(
-					static_cast<int>(::ERR_get_error()),
-					net::error::get_ssl_category()),
-				"Failed to set SNI Hostname");
-		}
-		// TLS Handshake: The "Secret Whisper." Swaps encryption keys so the pipe is secure.
-		// Takes 2 round trips in TLS 1.2.
-		ws.next_layer().handshake(ssl::stream_base::client);
-		// WebSocket Handshake: Upgrades the "pipe" from a standard website request 
-		// to a permanent, two-way live stream.
-		ws.handshake(host, "/ws");
+        wallet.private_key = cfg.private_key;
 
-		std::cout << "Connected to Hyperliquid! \n";
+        // =====================================================
+        // 3. Create order
+        // =====================================================
 
-		json subscribe_msg = {
-			{"method", "subscribe"},
-			{"subscription", {{"type", "l2Book"}, {"coin", "BTC"}}}
-		};
-		ws.write(net::buffer(subscribe_msg.dump()));
-		std::cout << subscribe_msg.dump();
-		OrderBook book;
-		//Listen for data
-		for (;;) {
-			beast::flat_buffer buffer;
-			ws.read(buffer);
-			auto response = json::parse(beast::buffers_to_string(buffer.data()));
+        OrderWire order;
 
-			book.update(response);
-			book.display();
-		}
-	}
-	catch (std::exception const& e) {
-		std::cerr << "Error: " << e.what() << "\n";
-	}
-	return 0;
+        order.asset = 0;
+        order.is_buy = true;
+        order.px = "64445";
+        order.sz = "11.58889";
+        order.reduce_only = false;
+        order.tif = "Ioc";
+
+        OrderAction action;
+        action.orders.push_back(order);
+        action.grouping = "na";
+
+        // =====================================================
+        // 5. Nonce (timestamp ms)
+        // =====================================================
+
+        uint64_t nonce = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()
+        ).count();
+
+
+        //std::cout << "ACTION" << action;
+        // =====================================================
+        // 6. Sign
+        // =====================================================
+
+        SignedL1Action signed_action =
+            signer.signL1Action(
+                wallet,
+                action,
+                "",         // vault address
+                nonce,
+                true       // false = testnet
+            );
+
+        // =====================================================
+        // 7. Print order JSON
+        // =====================================================
+
+        /*std::cout
+            << "ORDER JSON:"
+            << std::endl;
+
+        std::cout
+            << action.serialize()
+            << std::endl;*/
+
+        // =====================================================
+        // 8. Print signature
+        // =====================================================
+
+        std::cout
+            << "R: "
+            << bytesToHex(
+                std::vector<uint8_t>(
+                    signed_action.signature.r.begin(),
+                    signed_action.signature.r.end()
+                )
+            )
+            << std::endl;
+
+        std::cout
+            << "S: "
+            << bytesToHex(
+                std::vector<uint8_t>(
+                    signed_action.signature.s.begin(),
+                    signed_action.signature.s.end()
+                )
+            )
+            << std::endl;
+
+        std::cout
+            << "V: "
+            << signed_action.signature.v
+            << std::endl;
+
+        // =====================================================
+        // 9. Print payload
+        // =====================================================
+
+        std::cout
+            << "SOURCE: "
+            << signed_action.payload.message.source
+            << std::endl;
+
+        std::cout
+            << "CONNECTION ID: "
+            << bytesToHex(signed_action.payload.message.connectionId)
+            << std::endl;
+
+        // =====================================================
+        // 10. Success
+        // =====================================================
+
+        std::cout
+            << "SIGN SUCCESS"
+            << std::endl;
+    }
+    catch (const std::exception& ex)
+    {
+        std::cerr
+            << "ERROR: "
+            << ex.what()
+            << std::endl;
+    }
+
+    return 0;
 }
