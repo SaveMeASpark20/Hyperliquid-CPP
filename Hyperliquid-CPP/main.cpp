@@ -1,5 +1,4 @@
 #include "WSConnect.h"
-#include "HyperliquidSigner.h" 
 #include <iostream>
 #include <iomanip>
 #include <curl/curl.h>
@@ -11,13 +10,13 @@
 #include <array>
 #include <cstring>
 #include <algorithm>
-
 #include <chrono>
 #include <cstdint>
-
 #include <iomanip>
-
 #include <fstream>
+
+//#include "HyperliquidSigner.h" 
+#include "HyperliquidClient.h" 
 #define MODE_TEST 1 
 
 
@@ -45,30 +44,6 @@ void print_hex(const std::vector<uint8_t>& vec) {
 }
 
 
-
-using json = nlohmann::json;
-
-struct Config {
-    std::string private_key;
-    std::string wallet_address;
-};
-
-Config loadConfig() {
-    std::ifstream file("config.json");
-
-    if (!file.is_open()) {
-        throw std::runtime_error("Cannot open config.json");
-    }
-
-    json j;
-    file >> j;
-
-    return {
-        j["private_key"],
-        j["wallet_address"]
-    };
-}
-
 int main()
 {
     try
@@ -77,121 +52,20 @@ int main()
         // 1. Create signer
         // =====================================================
 
-        HyperliquidSigner signer;
-        Config cfg = loadConfig();
-
-        // =====================================================
-        // 2. Wallet
-        // =====================================================
-
-        LocalAccount wallet;
-
-        wallet.address = cfg.wallet_address;
-
-        wallet.private_key = cfg.private_key;
-
-        // =====================================================
-        // 3. Create order
-        // =====================================================
-
-        OrderWire order;
+        HyperliquidClient client;
+        
+        Order order;
 
         order.asset = 0;
-        order.is_buy = true;
-        order.px = "64445";
-        order.sz = "11.58889";
-        order.reduce_only = false;
+        order.isBuy = true;
+        order.price = "64876";
+        order.size = "10.27977";
+        order.reduceOnly = false;
         order.tif = "Ioc";
+        
 
-        OrderAction action;
-        action.orders.push_back(order);
-        action.grouping = "na";
+        client.placeOrder(order);
 
-        // =====================================================
-        // 5. Nonce (timestamp ms)
-        // =====================================================
-
-        uint64_t nonce = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::system_clock::now().time_since_epoch()
-        ).count();
-
-
-        //std::cout << "ACTION" << action;
-        // =====================================================
-        // 6. Sign
-        // =====================================================
-
-        SignedL1Action signed_action =
-            signer.signL1Action(
-                wallet,
-                action,
-                "",         // vault address
-                nonce,
-                true       // false = testnet
-            );
-
-        // =====================================================
-        // 7. Print order JSON
-        // =====================================================
-
-        /*std::cout
-            << "ORDER JSON:"
-            << std::endl;
-
-        std::cout
-            << action.serialize()
-            << std::endl;*/
-
-        // =====================================================
-        // 8. Print signature
-        // =====================================================
-
-        std::cout
-            << "R: "
-            << bytesToHex(
-                std::vector<uint8_t>(
-                    signed_action.signature.r.begin(),
-                    signed_action.signature.r.end()
-                )
-            )
-            << std::endl;
-
-        std::cout
-            << "S: "
-            << bytesToHex(
-                std::vector<uint8_t>(
-                    signed_action.signature.s.begin(),
-                    signed_action.signature.s.end()
-                )
-            )
-            << std::endl;
-
-        std::cout
-            << "V: "
-            << signed_action.signature.v
-            << std::endl;
-
-        // =====================================================
-        // 9. Print payload
-        // =====================================================
-
-        std::cout
-            << "SOURCE: "
-            << signed_action.payload.message.source
-            << std::endl;
-
-        std::cout
-            << "CONNECTION ID: "
-            << bytesToHex(signed_action.payload.message.connectionId)
-            << std::endl;
-
-        // =====================================================
-        // 10. Success
-        // =====================================================
-
-        std::cout
-            << "SIGN SUCCESS"
-            << std::endl;
     }
     catch (const std::exception& ex)
     {

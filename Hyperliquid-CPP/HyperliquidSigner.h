@@ -14,12 +14,14 @@
 #include <cstdint>
 #include <nlohmann/json.hpp>
 #include <msgpack.hpp>  
-
+#include <iostream>
 
 
 using json = nlohmann::json;
 
-inline std::string bytesToHex(const std::vector<uint8_t>& bytes)
+
+template<typename Container>
+inline std::string bytesToHex(const Container& bytes)
 {
 	std::stringstream ss;
 
@@ -33,6 +35,7 @@ inline std::string bytesToHex(const std::vector<uint8_t>& bytes)
 
 	return ss.str();
 }
+
 
 
 struct AgentMessage {
@@ -103,6 +106,8 @@ struct BuilderInfo
 	int f;
 };
 
+
+
 struct OrderWire
 {
 	int asset;
@@ -155,14 +160,19 @@ struct Signature
 //);
 
 struct SignedL1Action {
+	OrderAction action;
+	uint64_t nonce;
 	std::string wallet_address;
-
 	L1Payload payload;
-
 	Signature signature;
+	std::optional<std::string> vaultAddress;
+	std::optional<uint64_t> expiresAfter;
 };
 
-
+struct Config {
+	std::string private_key;
+	std::string wallet_address;
+};
 
 class HyperliquidSigner
 {
@@ -176,11 +186,11 @@ class HyperliquidSigner
 		L1Payload payLoadL1(AgentMessage phantom_agent);
 
 		SignedL1Action signL1Action(
-			LocalAccount wallet,
 			const  OrderAction& action,
 			std::string active_pool,
-			uint64_t nonce,
-			bool is_mainnet
+			bool is_mainnet,
+			std::optional<std::string> vaultAddress = std::nullopt,
+			std::optional<uint64_t> expiresAfter = std::nullopt
 		);
 
 		/*std::vector<uint8_t> encode_typed_data(const json& full_message);*/
@@ -201,13 +211,14 @@ class HyperliquidSigner
 		//nlohmann::json sign_inner(const LocalAccount& wallet, const nlohmann::json& data);
 		Signature sign_hash(const std::array<unsigned char, 32>& hash, const std::array<unsigned char, 32>& privkey);
 		std::vector<uint8_t> keccak256(const std::vector<uint8_t>& input);
-
+		json toJson(const SignedL1Action& signedAction);
 
 	private:
 
 		std::vector<uint8_t>pad32(const std::vector<uint8_t>& input);
 		std::vector<uint8_t> hash_string(const std::string& s);
 		std::vector<uint8_t> hash_eip712_message(const std::string& primaryType, const json& data);
+		Config loadConfig();
 
 };
 

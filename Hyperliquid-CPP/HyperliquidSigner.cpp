@@ -11,10 +11,99 @@
 #include <algorithm>
 #include <secp256k1_recovery.h>
 #include <stdexcept>
+#include <fstream>
 
 using json = nlohmann::json;
 
 #define bswap64 _byteswap_uint64
+
+
+Config HyperliquidSigner::loadConfig() {
+    std::ifstream file("config.json");
+
+    if (!file.is_open()) {
+        throw std::runtime_error("Cannot open config.json");
+    }
+
+    json j;
+    file >> j;
+
+    return {
+        j["private_key"],
+        j["wallet_address"]
+    };
+}
+
+json HyperliquidSigner::toJson(const SignedL1Action& signedAction)
+{
+    json orders = json::array();
+
+    for (const auto& o : signedAction.action.orders)
+    {
+        orders.push_back({
+            {"a", o.asset},
+            {"b", o.is_buy},
+            {"p", o.px},
+            {"s", o.sz},
+            {"r", o.reduce_only},
+            {
+                "t",
+                {
+                    {
+                        "limit",
+                        {
+                            {"tif", o.tif}
+                        }
+                    }
+                }
+            }
+            });
+    }
+
+    json payload;
+
+    payload["action"] = {
+        {"type", "order"},
+        {"orders", orders},
+        {"grouping", signedAction.action.grouping}
+    };
+
+    payload["nonce"] = signedAction.nonce;
+
+    payload["signature"] = {
+        {
+            "r",
+            "0x" + bytesToHex(
+                std::vector<uint8_t>(
+                    signedAction.signature.r.begin(),
+                    signedAction.signature.r.end()
+                )
+            )
+        },
+        {
+            "s",
+            "0x" + bytesToHex(
+                std::vector<uint8_t>(
+                    signedAction.signature.s.begin(),
+                    signedAction.signature.s.end()
+                )
+            )
+        },
+        {"v", signedAction.signature.v}
+    };
+
+    payload["vaultAddress"] =
+        signedAction.vaultAddress.has_value()
+        ? json(*signedAction.vaultAddress)
+        : nullptr;
+
+    payload["expiresAfter"] =
+        signedAction.expiresAfter.has_value()
+        ? json(*signedAction.expiresAfter)
+        : nullptr;
+
+    return payload;
+}
 
 
 std::vector<uint8_t> HyperliquidSigner::keccak256(const std::vector<uint8_t>& input) 
@@ -279,12 +368,19 @@ L1Payload HyperliquidSigner::payLoadL1(AgentMessage phantom_agent) {
 }
 
 SignedL1Action HyperliquidSigner::signL1Action(
-    LocalAccount wallet,
     const  OrderAction& action,
     std::string active_pool,
-    uint64_t nonce,
-    bool is_mainnet
+    bool is_mainnet,
+    std::optional<std::string> vaultAddress,
+    std::optional<uint64_t> expiresAfter
 ) {
+
+    uint64_t nonce = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()
+        ).count();
+
+    /*uint64_t nonce = 1782004411169;*/
+
     // 1. Logic to build the hash and payload (already done!)
     std::vector<uint8_t> hashBytes = getActionHash(action, nonce, active_pool);
 
@@ -294,8 +390,6 @@ SignedL1Action HyperliquidSigner::signL1Action(
     //std::cout << "phantom_agent: " << agent << "\n";
     L1Payload payload = payLoadL1(agent);
     json full;
-
-
 
     full["primaryType"] = payload.primaryType;
 
@@ -310,7 +404,6 @@ SignedL1Action HyperliquidSigner::signL1Action(
         {"source", payload.message.source},
         {"connectionId", payload.message.connectionId}
     };
-    
 
     std::cout << "data: " << full << " \n";
 
@@ -321,10 +414,12 @@ SignedL1Action HyperliquidSigner::signL1Action(
     std::vector<uint8_t> digest =
         encode_typed_data(full);
 
+    LocalAccount wallet;
 
-    // =========================================
-    // 6. Convert digest -> array<32>
-    // =========================================
+    Config cfg = loadConfig();
+    wallet.address = cfg.wallet_address;
+    wallet.private_key = cfg.private_key;
+
 
     std::array<unsigned char, 32> digest_array;
 
@@ -341,6 +436,22 @@ SignedL1Action HyperliquidSigner::signL1Action(
     std::vector<uint8_t> pk_bytes =
         hexToBytes(wallet.private_key);
 
+    std::cout << "Private Key: "
+        << bytesToHex(pk_bytes)
+        << std::endl;
+
+    std::cout << "PK bytes size: "
+        << pk_bytes.size()
+        << std::endl;
+
+    std::cout << "PK string: "
+        << wallet.private_key
+        << std::endl;
+
+    std::cout << "PK string length: "
+        << wallet.private_key.size()
+        << std::endl;
+
     std::array<unsigned char, 32> privkey;
 
     std::copy(
@@ -349,7 +460,6 @@ SignedL1Action HyperliquidSigner::signL1Action(
         privkey.begin()
     );
 
-
     // =========================================
     // 8. Sign digest
     // =========================================
@@ -357,10 +467,12 @@ SignedL1Action HyperliquidSigner::signL1Action(
     Signature sig = sign_hash(digest_array, privkey);
 
     SignedL1Action result;
-
+    
+    result.action = action;
+    result.nonce = nonce;
     result.wallet_address =  wallet.address;
 
-    result.payload = payload;
+    /*result.payload = payload;*/
 
     result.signature = sig;
     
@@ -667,6 +779,10 @@ Signature HyperliquidSigner:: sign_hash(
     // ==========================================
     // Cleanup
     // ==========================================
+
+    std::cout << "r=" << bytesToHex(sig_out.r) << '\n';
+    std::cout << "s=" << bytesToHex(sig_out.s) << '\n';
+    std::cout << "v=" << (int)sig_out.v << '\n';
 
     secp256k1_context_destroy(ctx);
     return sig_out;
