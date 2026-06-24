@@ -12,8 +12,11 @@
 #include <secp256k1_recovery.h>
 #include <stdexcept>
 #include <fstream>
+#include <string>
+#include <variant>
 
 using json = nlohmann::json;
+
 
 #define bswap64 _byteswap_uint64
 
@@ -34,11 +37,11 @@ Config HyperliquidSigner::loadConfig() {
     };
 }
 
-json HyperliquidSigner::toJson(const SignedL1Action& signedAction)
+json HyperliquidSigner::actionToJson(const OrderAction& action)
 {
     json orders = json::array();
 
-    for (const auto& o : signedAction.action.orders)
+    for (const auto& o : action.orders)
     {
         orders.push_back({
             {"a", o.asset},
@@ -60,13 +63,37 @@ json HyperliquidSigner::toJson(const SignedL1Action& signedAction)
             });
     }
 
-    json payload;
-
-    payload["action"] = {
+    return {
         {"type", "order"},
         {"orders", orders},
-        {"grouping", signedAction.action.grouping}
+        {"grouping", action.grouping}
     };
+};
+
+json HyperliquidSigner::actionToJson(const UpdateLeverageAction& action)
+{
+    return {
+        {"type", "updateLeverage"},
+        {"asset", action.asset},
+        {"isCross", action.is_cross},
+        {"leverage", action.leverage}
+    };
+}
+
+
+json HyperliquidSigner::toJson(const SignedL1Action& signedAction)
+{
+    json payload;
+
+
+    payload["action"] =
+        std::visit(
+            [this](const auto& action)
+            {
+                return actionToJson(action);
+            },
+            signedAction.action
+        );
 
     payload["nonce"] = signedAction.nonce;
 
@@ -106,6 +133,8 @@ json HyperliquidSigner::toJson(const SignedL1Action& signedAction)
 }
 
 
+
+
 std::vector<uint8_t> HyperliquidSigner::keccak256(const std::vector<uint8_t>& input) 
 {
     using namespace CryptoPP;
@@ -137,6 +166,20 @@ std::vector<uint8_t> HyperliquidSigner::hexToBytes(std::string hex)
 
 std::vector<uint8_t>
 HyperliquidSigner::packAction(
+    const Action& action
+)
+{
+    return std::visit(
+        [this](auto&& a)
+        {
+            return packActionImpl(a);
+        },
+        action
+    );
+}
+
+std::vector<uint8_t>
+HyperliquidSigner::packActionImpl(
     const OrderAction& action
 )
 {
@@ -254,10 +297,38 @@ HyperliquidSigner::packAction(
     return packed;
 }
 
+std::vector<uint8_t>
+HyperliquidSigner::packActionImpl(
+    const UpdateLeverageAction& action
+)
+{
+    msgpack::sbuffer sbuf;
+    msgpack::packer<msgpack::sbuffer> pk(&sbuf);
+
+    pk.pack_map(4);
+
+    pk.pack("type");
+    pk.pack("updateLeverage");
+
+    pk.pack("asset");
+    pk.pack(action.asset);
+
+    pk.pack("isCross");
+    pk.pack(action.is_cross);
+
+    pk.pack("leverage");
+    pk.pack(action.leverage);
+
+    return {
+        reinterpret_cast<const uint8_t*>(sbuf.data()),
+        reinterpret_cast<const uint8_t*>(sbuf.data()) + sbuf.size()
+    };
+}
+
 
 std::vector<uint8_t>
 HyperliquidSigner::getActionHash(
-    const OrderAction& action,
+    const Action& action,
     uint64_t nonce,
     const std::string& vaultAddress,
     std::optional<uint64_t> expiresAfter = std::nullopt
@@ -368,7 +439,7 @@ L1Payload HyperliquidSigner::payLoadL1(AgentMessage phantom_agent) {
 }
 
 SignedL1Action HyperliquidSigner::signL1Action(
-    const  OrderAction& action,
+    const  Action& action,
     std::string active_pool,
     bool is_mainnet,
     std::optional<std::string> vaultAddress,
@@ -379,15 +450,13 @@ SignedL1Action HyperliquidSigner::signL1Action(
             std::chrono::system_clock::now().time_since_epoch()
         ).count();
 
-    /*uint64_t nonce = 1782004411169;*/
+    //uint64_t nonce = 1782273354130;
 
-    // 1. Logic to build the hash and payload (already done!)
     std::vector<uint8_t> hashBytes = getActionHash(action, nonce, active_pool);
 
     std::string hashHex = bytesToHex(hashBytes);
     std::cout << "hash: " << hashHex << "\n";
     AgentMessage agent = getInfo(is_mainnet, hashBytes);
-    //std::cout << "phantom_agent: " << agent << "\n";
     L1Payload payload = payLoadL1(agent);
     json full;
 

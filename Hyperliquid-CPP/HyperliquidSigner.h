@@ -15,6 +15,7 @@
 #include <nlohmann/json.hpp>
 #include <msgpack.hpp>  
 #include <iostream>
+#include <variant>
 
 
 using json = nlohmann::json;
@@ -130,7 +131,18 @@ struct OrderAction
 	BuilderInfo* builder = nullptr;
 };
 
+struct UpdateLeverageAction {
+	std::string type;
+	int asset;
+	bool is_cross;
+	int leverage;
+};
 
+
+using Action = std::variant<
+	OrderAction,
+	UpdateLeverageAction
+>;
 
 struct SignableMessage {
 	uint8_t version = 0x01;
@@ -154,13 +166,9 @@ struct Signature
 	int v;
 };
 
-//Signature sign_hash(
-//	const std::array<unsigned char, 32>& hash,
-//	const std::array<unsigned char, 32>& privkey
-//);
 
 struct SignedL1Action {
-	OrderAction action;
+	Action action;
 	uint64_t nonce;
 	std::string wallet_address;
 	L1Payload payload;
@@ -174,19 +182,26 @@ struct Config {
 	std::string wallet_address;
 };
 
+//update_leverage_action = {
+//	"type": "updateLeverage",
+//	"asset" : self.info.name_to_asset(name),
+//	"isCross" : is_cross,
+//	"leverage" : leverage,
+//}
+
 class HyperliquidSigner
 {
 	public:
 
-		std::vector<uint8_t> packAction(const OrderAction& action);
+		std::vector<uint8_t> packAction(const Action& action);
 
-		std::vector<uint8_t> getActionHash(const OrderAction& action, uint64_t nonce, const std::string& vault_address, std::optional<uint64_t> expires_after);
+		std::vector<uint8_t> getActionHash(const Action& action, uint64_t nonce, const std::string& vault_address, std::optional<uint64_t> expires_after);
 
 		AgentMessage getInfo(bool is_mainnet, std::vector<uint8_t> hash);
 		L1Payload payLoadL1(AgentMessage phantom_agent);
 
 		SignedL1Action signL1Action(
-			const  OrderAction& action,
+			const  Action& action,
 			std::string active_pool,
 			bool is_mainnet,
 			std::optional<std::string> vaultAddress = std::nullopt,
@@ -218,6 +233,10 @@ class HyperliquidSigner
 		std::vector<uint8_t>pad32(const std::vector<uint8_t>& input);
 		std::vector<uint8_t> hash_string(const std::string& s);
 		std::vector<uint8_t> hash_eip712_message(const std::string& primaryType, const json& data);
+		json actionToJson(const OrderAction& action);
+		json actionToJson(const UpdateLeverageAction& action);
+		std::vector<uint8_t> packActionImpl(const OrderAction& action);
+		std::vector<uint8_t> packActionImpl(const UpdateLeverageAction& action);
 		Config loadConfig();
 
 };

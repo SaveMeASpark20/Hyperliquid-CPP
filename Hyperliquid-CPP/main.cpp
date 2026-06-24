@@ -52,7 +52,7 @@ int main()
         // 1. Create signer
         // =====================================================
 
-        HyperliquidClient client;
+        /*HyperliquidClient client;
         
         Order order;
 
@@ -64,7 +64,19 @@ int main()
         order.tif = "Ioc";
         
 
-        client.placeOrder(order);
+        client.placeOrder(order);*/
+
+
+        HyperliquidSigner signer;
+        UpdateLeverageAction leverage;
+        
+        leverage.type = "updateLeverage";
+        leverage.asset = 0;
+        leverage.is_cross = true;
+        leverage.leverage = 3;
+
+
+        signer.signL1Action(leverage, "", true);
 
     }
     catch (const std::exception& ex)
