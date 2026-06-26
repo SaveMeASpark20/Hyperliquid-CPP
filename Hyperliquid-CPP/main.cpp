@@ -17,6 +17,7 @@
 
 //#include "HyperliquidSigner.h" 
 #include "HyperliquidClient.h" 
+#include "HyperliquidInfo.h" 
 #define MODE_TEST 1 
 
 
@@ -52,31 +53,38 @@ int main()
         // 1. Create signer
         // =====================================================
 
-        /*HyperliquidClient client;
-        
-        Order order;
+        HyperliquidClient client;
+        //
+        //Order order;
+        /*OrderWire order;
 
         order.asset = 0;
-        order.isBuy = true;
-        order.price = "64876";
-        order.size = "10.27977";
-        order.reduceOnly = false;
-        order.tif = "Ioc";
+        order.is_buy = true;
+        order.px = "64876";
+        order.sz = "10.27977";
+        order.reduce_only = false;
+        order.tif = "Ioc";*/
         
 
-        client.placeOrder(order);*/
+        //client.placeOrder(order);
 
-
-        HyperliquidSigner signer;
+        
+        //HyperliquidSigner signer;
         UpdateLeverageAction leverage;
         
         leverage.type = "updateLeverage";
         leverage.asset = 0;
         leverage.is_cross = true;
         leverage.leverage = 3;
+        client.updateLeverage(leverage);
 
 
-        signer.signL1Action(leverage, "", true);
+        //HyperliquidInfo info;
+
+        //std::string result = info.spotUserState("0xeD0Bb03089Ae4ff5A97C84642F17654bbf839cC9");
+
+        //std::cout << "result: " << result << "/n";
+        //signer.signL1Action(leverage, "", true);
 
     }
     catch (const std::exception& ex)

@@ -17,6 +17,8 @@
 #include <iostream>
 #include <variant>
 
+#include "HyperliquidTypes.h"
+
 
 using json = nlohmann::json;
 
@@ -101,48 +103,48 @@ msgpack::type::assoc_vector<
 	msgpack::type::variant
 >;
 
-struct BuilderInfo
-{
-	std::string b;
-	int f;
-};
-
-
-
-struct OrderWire
-{
-	int asset;
-	bool is_buy;
-	std::string px;
-	std::string sz;
-	bool reduce_only;
-
-	// only supporting limit/Gtc for now
-	std::string tif = "Ioc";
-
-	std::string cloid;
-};
-
-struct OrderAction
-{
-	std::vector<OrderWire> orders;
-	std::string grouping = "na";
-
-	BuilderInfo* builder = nullptr;
-};
-
-struct UpdateLeverageAction {
-	std::string type;
-	int asset;
-	bool is_cross;
-	int leverage;
-};
-
-
-using Action = std::variant<
-	OrderAction,
-	UpdateLeverageAction
->;
+//struct BuilderInfo
+//{
+//	std::string b;
+//	int f;
+//};
+//
+//
+//
+//struct OrderWire
+//{
+//	int asset;
+//	bool is_buy;
+//	std::string px;
+//	std::string sz;
+//	bool reduce_only;
+//
+//	// only supporting limit/Gtc for now
+//	std::string tif = "Ioc";
+//
+//	std::string cloid;
+//};
+//
+//struct OrderAction
+//{
+//	std::vector<OrderWire> orders;
+//	std::string grouping = "na";
+//
+//	BuilderInfo* builder = nullptr;
+//};
+//
+//struct UpdateLeverageAction {
+//	std::string type;
+//	int asset;
+//	bool is_cross;
+//	int leverage;
+//};
+//
+//
+//using Action = std::variant<
+//	OrderAction,
+//	UpdateLeverageAction
+//>;
 
 struct SignableMessage {
 	uint8_t version = 0x01;
