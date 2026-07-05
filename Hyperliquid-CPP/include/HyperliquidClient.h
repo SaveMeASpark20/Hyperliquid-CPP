@@ -2,13 +2,10 @@
 #define HYPERLIQUIDCLIENT_H
 
 #include <string>
-#include <nlohmann/json.hpp>
-
 #include "HyperliquidSigner.h"
 #include "HttpClient.h"
 #include "HyperliquidTypes.h"
 
-using json = nlohmann::json;
 
 //struct Order
 //{

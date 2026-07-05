@@ -1,0 +1,13 @@
+{
+  "name": "hyperliquid-cpp",
+  "version": "1.0.0",
+  "description": "Modern C++ SDK for the Hyperliquid exchange",
+  "dependencies": [
+    "boost-beast",
+    "openssl",
+    "nlohmann-json",
+    "cryptopp",
+    "msgpack",
+    "secp256k1"
+  ]
+}

@@ -1,5 +1,6 @@
 #ifndef WSCONNECT_H
 #define WSCONNECT_H
+
 #include <string>
 #include <string_view>
 

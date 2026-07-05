@@ -1,19 +1,19 @@
 #include "WSConnect.h"
 #include <iostream>
-#include <iomanip>
-#include <curl/curl.h>
+//#include <iomanip>
+//#include <curl/curl.h>
 
-#include <secp256k1.h>
-#include <boost/beast/core.hpp>
-#include <nlohmann/json.hpp>
+//#include <secp256k1.h>
+//#include <boost/beast/core.hpp>
+//#include <nlohmann/json.hpp>
 
-#include <array>
-#include <cstring>
-#include <algorithm>
-#include <chrono>
-#include <cstdint>
-#include <iomanip>
-#include <fstream>
+//#include <array>
+//#include <cstring>
+//#include <algorithm>
+//#include <chrono>
+//#include <cstdint>
+//#include <iomanip>
+//#include <fstream>
 
 //#include "HyperliquidSigner.h" 
 #include "HyperliquidClient.h" 
@@ -22,7 +22,7 @@
 
 
 #ifdef _WIN32
-    #pragma comment(lib, "libcurl.lib")
+    /*#pragma comment(lib, "libcurl.lib")*/
     #pragma comment(lib, "libssl.lib")
     #pragma comment(lib, "libcrypto.lib")
     #pragma comment(lib, "crypt32.lib")
@@ -56,20 +56,21 @@ int main()
         HyperliquidClient client;
         //
         //Order order;
-        /*OrderWire order;
+        OrderWire order;
 
         order.asset = 0;
-        order.is_buy = true;
+        order.is_buy = false;
         order.px = "64876";
         order.sz = "10.27977";
         order.reduce_only = false;
-        order.tif = "Ioc";*/
+        order.tif = "Ioc";
+        order.cloid = "0x00000000000000000000000000000001";
         
 
-        //client.placeOrder(order);
+        client.placeOrder(order);
 
         
-        //HyperliquidSigner signer;
+        HyperliquidSigner signer;
         UpdateLeverageAction leverage;
         
         leverage.type = "updateLeverage";

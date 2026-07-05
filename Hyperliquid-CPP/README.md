@@ -16,6 +16,7 @@ A high-performance C++ implementation for interacting with the Hyperliquid excha
 * Boost (Beast, Asio, System)
 * OpenSSL
 * nlohmann/json
+* cryptopp
 
 ## 🔨 How to Build
 1. Clone the repository.

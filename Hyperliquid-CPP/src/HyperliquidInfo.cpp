@@ -1,4 +1,7 @@
 #include "HyperliquidInfo.h"
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 
 std::string HyperliquidInfo::spotUserState(std::string address)

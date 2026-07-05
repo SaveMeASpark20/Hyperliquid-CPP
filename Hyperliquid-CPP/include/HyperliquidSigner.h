@@ -5,8 +5,8 @@
 #define SECP256K1_STATIC
 #endif
 
-#include <secp256k1.h>
-#include <secp256k1_recovery.h> 
+//#include <secp256k1.h>
+//#include <secp256k1_recovery.h> 
 
 #include <optional>
 #include <vector>
@@ -97,11 +97,11 @@ struct LocalAccount {
 };
 
 
-using MsgPackMap =
-msgpack::type::assoc_vector<
-	std::string,
-	msgpack::type::variant
->;
+//using MsgPackMap =
+//msgpack::type::assoc_vector<
+//	std::string,
+//	msgpack::type::variant
+//>;
 
 //struct BuilderInfo
 //{
@@ -195,13 +195,6 @@ class HyperliquidSigner
 {
 	public:
 
-		std::vector<uint8_t> packAction(const Action& action);
-
-		std::vector<uint8_t> getActionHash(const Action& action, uint64_t nonce, const std::string& vault_address, std::optional<uint64_t> expires_after);
-
-		AgentMessage getInfo(bool is_mainnet, std::vector<uint8_t> hash);
-		L1Payload payLoadL1(AgentMessage phantom_agent);
-
 		SignedL1Action signL1Action(
 			const  Action& action,
 			std::string active_pool,
@@ -215,9 +208,18 @@ class HyperliquidSigner
 		//std::vector<uint8_t> hash_domain(const json& domain);
 		/*std::vector<uint8_t> hash_struct(const std::string& primaryType, const json& message);*/
 
+		json toJson(const SignedL1Action& signedAction);
+
+	private:
+		std::vector<uint8_t> packAction(const Action& action);
+
+		std::vector<uint8_t> getActionHash(const Action& action, uint64_t nonce, const std::string& vault_address, std::optional<uint64_t> expires_after);
+
+		AgentMessage getInfo(bool is_mainnet, std::vector<uint8_t> hash);
+		L1Payload payLoadL1(AgentMessage phantom_agent);
 		std::vector<uint8_t> hexToBytes(std::string hex);
 		/*Signature sign_inner(const std::vector<uint8_t>& private_key, const json& data);*/
-		
+
 		std::vector<uint8_t> uintToBytes(uint64_t value);
 		std::vector<uint8_t> hash_type(const std::string& signature);
 
@@ -228,9 +230,6 @@ class HyperliquidSigner
 		//nlohmann::json sign_inner(const LocalAccount& wallet, const nlohmann::json& data);
 		Signature sign_hash(const std::array<unsigned char, 32>& hash, const std::array<unsigned char, 32>& privkey);
 		std::vector<uint8_t> keccak256(const std::vector<uint8_t>& input);
-		json toJson(const SignedL1Action& signedAction);
-
-	private:
 
 		std::vector<uint8_t>pad32(const std::vector<uint8_t>& input);
 		std::vector<uint8_t> hash_string(const std::string& s);
@@ -240,7 +239,6 @@ class HyperliquidSigner
 		std::vector<uint8_t> packActionImpl(const OrderAction& action);
 		std::vector<uint8_t> packActionImpl(const UpdateLeverageAction& action);
 		Config loadConfig();
-
 };
 
 //struct HyperliquidOrder {

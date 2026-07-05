@@ -1,14 +1,13 @@
 #include "HyperliquidSigner.h"
 #include <iostream>
-#include <iomanip>
 #include <sstream>
 #include <chrono>
 #include <msgpack.hpp>          
-#include <stdlib.h>            // For _byteswap_uint64
 #include <cryptopp/keccak.h>
 #include <iomanip> 
 #include <nlohmann/json.hpp>
 #include <algorithm>
+#include <secp256k1.h>
 #include <secp256k1_recovery.h>
 #include <stdexcept>
 #include <fstream>
@@ -18,7 +17,6 @@
 using json = nlohmann::json;
 
 
-#define bswap64 _byteswap_uint64
 
 
 Config HyperliquidSigner::loadConfig() {
@@ -43,26 +41,29 @@ json HyperliquidSigner::actionToJson(const OrderAction& action)
 
     for (const auto& o : action.orders)
     {
-        orders.push_back({
-            {"a", o.asset},
-            {"b", o.is_buy},
-            {"p", o.px},
-            {"s", o.sz},
-            {"r", o.reduce_only},
+        json order;
+
+        order["a"] = o.asset;
+        order["b"] = o.is_buy;
+        order["p"] = o.px;
+        order["s"] = o.sz;
+        order["r"] = o.reduce_only;
+        order["t"] = {
             {
-                "t",
+                "limit",
                 {
-                    {
-                        "limit",
-                        {
-                            {"tif", o.tif}
-                        }
-                    }
+                    {"tif", o.tif}
                 }
             }
-            });
-    }
+        };
 
+        if (!o.cloid.empty())
+            order["c"] = o.cloid;
+
+        orders.push_back(std::move(order));
+        
+    }
+    
     return {
         {"type", "order"},
         {"orders", orders},
@@ -336,6 +337,10 @@ HyperliquidSigner::getActionHash(
 {
     std::vector<uint8_t> data = packAction(action);
 
+   /* std::visit([](const auto& value) {
+        std::cout << value << std::endl;
+        }, action);*/
+
     //
     // nonce.to_bytes(8, "big")
     //
@@ -451,6 +456,7 @@ SignedL1Action HyperliquidSigner::signL1Action(
         ).count();
 
     //uint64_t nonce = 1782273354130;
+
 
     std::vector<uint8_t> hashBytes = getActionHash(action, nonce, active_pool);
 
