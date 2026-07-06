@@ -109,6 +109,7 @@ install(
 
 include(CMakePackageConfigHelpers)
 
+#create 3 .cmake at lib/cmake/HyperliquidCPP, this tell how to use the SDK
 configure_package_config_file(
     cmake/HyperliquidCPPConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/HyperliquidCPPConfig.cmake

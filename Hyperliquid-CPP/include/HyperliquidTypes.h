@@ -4,16 +4,6 @@
 #include <iostream>
 #include <variant>
 #include <string>
-//struct Order
-//{
-//    uint32_t asset;
-//    bool isBuy;
-//    std::string size;
-//    std::string price;
-//    bool reduceOnly;
-//    std::string tif; // "Gtc", "Ioc", "Alo"
-//};
-
 
 
 struct BuilderInfo

@@ -26,17 +26,17 @@ using json = nlohmann::json;
 template<typename Container>
 inline std::string bytesToHex(const Container& bytes)
 {
-	std::stringstream ss;
+		std::stringstream ss;
 
-	for (uint8_t b : bytes)
-	{
-		ss << std::hex
-			<< std::setw(2)
-			<< std::setfill('0')
-			<< static_cast<int>(b);
-	}
+		for (uint8_t b : bytes)
+		{
+			ss << std::hex
+				<< std::setw(2)
+				<< std::setfill('0')
+				<< static_cast<int>(b);
+		}
 
-	return ss.str();
+		return ss.str();
 }
 
 
@@ -86,15 +86,15 @@ struct L1Payload {
 	}
 };
 
-struct LocalAccount {
-	std::string address;
-	std::string private_key;
-
-	struct SignedAction {
-		std::string wallet_address;
-		L1Payload payload;
-	};
-};
+//struct LocalAccount {
+//	std::string address;
+//	std::string private_key;
+//
+//	struct SignedAction {
+//		std::string wallet_address;
+//		L1Payload payload;
+//	};
+//};
 
 
 //using MsgPackMap =

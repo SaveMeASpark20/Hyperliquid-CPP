@@ -2,10 +2,7 @@
 #include <charconv> 
 #include "OrderBook.h"
 
-//long long OrderBook::toFixed(const std::string& s)
-//{
-//	return static_cast<long long>(std::stod(s) * SCALE);
-//}
+
 
 long long OrderBook::toFixed(const std::string& s)
 {
