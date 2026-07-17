@@ -14,7 +14,7 @@ class OrderBook
 {
 public:
 
-	const long long SCALE{ 100000000 };
+	long long SCALE{ 100000000 };
 	std::array<Level, 100> bids;
 	std::array<Level, 100> asks;
 	int num_bids{ 0 };

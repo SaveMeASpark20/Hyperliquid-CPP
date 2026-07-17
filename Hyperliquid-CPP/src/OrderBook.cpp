@@ -44,7 +44,6 @@ void OrderBook::update(const nlohmann::json& data)
 	and that way we don't know if bids[0] and asks[0] is updated. so if the price goes down and bids still holds last up price we will having a problem same on asks
 	
 	*/
-	
 
 	num_bids = 0;
 	num_asks = 0;

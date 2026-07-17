@@ -1,28 +1,15 @@
 #include "WSConnect.h"
 #include <iostream>
-//#include <iomanip>
-//#include <curl/curl.h>
-
-//#include <secp256k1.h>
-//#include <boost/beast/core.hpp>
-//#include <nlohmann/json.hpp>
-
-//#include <array>
-//#include <cstring>
-//#include <algorithm>
-//#include <chrono>
-//#include <cstdint>
-//#include <iomanip>
-//#include <fstream>
-
-//#include "HyperliquidSigner.h" 
+ 
 #include "HyperliquidClient.h" 
 #include "HyperliquidInfo.h" 
+
+#include "WSConnect.h"
+
 #define MODE_TEST 1 
 
 
 #ifdef _WIN32
-    /*#pragma comment(lib, "libcurl.lib")*/
     #pragma comment(lib, "libssl.lib")
     #pragma comment(lib, "libcrypto.lib")
     #pragma comment(lib, "crypt32.lib")
@@ -34,8 +21,6 @@
 #endif
 
 using json = nlohmann::json;
-
-
 
 void print_hex(const std::vector<uint8_t>& vec) {
     for (uint8_t b : vec) {
@@ -49,44 +34,79 @@ int main()
 {
     try
     {
-        // =====================================================
-        // 1. Create signer
-        // =====================================================
+        WSConnect ws;
+        ws.connect();
 
-        HyperliquidClient client;
-        //
-        //Order order;
-        OrderWire order;
+        //ws.dispatcher().tradeFeed().setCallback(
+        //    [](const Trade& trade)
+        //    {
+        //        std::cout
+        //            << trade.coin
+        //            << " "
+        //            << trade.px
+        //            << " "
+        //            << trade.sz
+        //            << "\n";
+        //    });
 
-        order.asset = 0;
-        order.is_buy = false;
-        order.px = "64876";
-        order.sz = "10.27977";
-        order.reduce_only = false;
-        order.tif = "Ioc";
-        order.cloid = "0x00000000000000000000000000000001";
-        
+        //ws.subscribeTrades("BTC");
 
-        client.placeOrder(order);
+        //ws.dispatcher().bboFeed().setCallback(
+        //    [](const WsBbo& bbo)
+        //    {
+        //        std::cout
+        //            << bbo.coin
+        //            << " "
+        //            << bbo.time
+        //            << " "
+        //            << "\n"; 
+        //            if (bbo.bbo1)
+        //            {
+        //                std::cout << bbo.bbo1->px
+        //                    << " "
+        //                    << bbo.bbo1->sz
+        //                    << " "
+        //                    << bbo.bbo1->n
+        //                    << "\n";
+        //            }
 
-        
-        HyperliquidSigner signer;
-        UpdateLeverageAction leverage;
-        
-        leverage.type = "updateLeverage";
-        leverage.asset = 0;
-        leverage.is_cross = true;
-        leverage.leverage = 3;
-        client.updateLeverage(leverage);
+        //            if (bbo.bbo2)
+        //            {
+        //                std::cout << bbo.bbo2->px
+        //                << " "
+        //                << bbo.bbo2->sz
+        //                << " "
+        //                << bbo.bbo2->n
+        //                << "\n";
+        //            }
+        //    });
 
+        //ws.subscribeBBO("BTC");
 
-        //HyperliquidInfo info;
+        //ws.dispatcher().l2BookFeed().setCallback(
+        //    [](const WsBook& l2Book)
+        //    {
+        //        std::cout << l2Book.coin << "\n";
+        //        for (const auto& level : l2Book.bids)
+        //        {
+        //            std::cout
+        //                << "bids: " << "\n"
+        //                << level.px << " "
+        //                << level.sz << " "
+        //                << level.n << "\n";
+        //        }
 
-        //std::string result = info.spotUserState("0xeD0Bb03089Ae4ff5A97C84642F17654bbf839cC9");
+        //        for (const auto& level : l2Book.asks)
+        //        {
+        //            std::cout
+        //                << "asks: " << "\n"
+        //                << level.px << " "
+        //                << level.sz << " "
+        //                << level.n << "\n";
+        //        }
+        //    });
 
-        //std::cout << "result: " << result << "/n";
-        //signer.signL1Action(leverage, "", true);
-
+        //ws.subscribeL2Book("BTC");
     }
     catch (const std::exception& ex)
     {

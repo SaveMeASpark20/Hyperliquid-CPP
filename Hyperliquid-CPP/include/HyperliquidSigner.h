@@ -86,15 +86,15 @@ struct L1Payload {
 	}
 };
 
-//struct LocalAccount {
-//	std::string address;
-//	std::string private_key;
-//
-//	struct SignedAction {
-//		std::string wallet_address;
-//		L1Payload payload;
-//	};
-//};
+struct LocalAccount {
+	std::string address;
+	std::string private_key;
+
+	struct SignedAction {
+		std::string wallet_address;
+		L1Payload payload;
+	};
+};
 
 
 //using MsgPackMap =

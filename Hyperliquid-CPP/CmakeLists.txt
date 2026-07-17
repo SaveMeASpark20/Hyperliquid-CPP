@@ -29,7 +29,11 @@ add_library(HyperliquidCPP
 	src/HyperliquidSigner.cpp
 	src/Orderbook.cpp
 	src/WSConnect.cpp
-)
+	src/TradeFeed.cpp
+	src/Dispatcher.cpp
+	src/BBOFeed.cpp
+	src/L2BookFeed.cpp
+	)
 
 
 add_library(HyperliquidCPP::HyperliquidCPP ALIAS HyperliquidCPP)
@@ -48,7 +52,11 @@ target_sources(HyperliquidCPP
 			include/HyperliquidTypes.h
             include/Orderbook.h
             include/WSConnect.h
-)
+			include/Dispatcher.h
+			include/BBOFeed.h
+			include/TradeFeed.h
+			include/L2BookFeed.h)
+			
 
 
 #tell compilers where to look development/ installed sdk
@@ -61,7 +69,7 @@ target_include_directories(HyperliquidCPP
 #this will create a HLcpp.exe
 add_executable(HLcpp
 	test/main.cpp
-)
+ )
 
 
 # link the dependencies to HYPERLIQUIDCPP
