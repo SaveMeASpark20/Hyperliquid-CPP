@@ -16,9 +16,9 @@ void BBOFeed::parse(const json& message)
 		return;
 
 	const auto& data = message["data"];
-	
 	WsBbo bbo;
-		
+	
+	std::cout << "bbo: " << data << "\n";
 	bbo.coin = data["coin"];
 	bbo.time = data["time"];
 		

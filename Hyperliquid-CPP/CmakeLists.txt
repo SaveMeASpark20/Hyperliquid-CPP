@@ -55,7 +55,8 @@ target_sources(HyperliquidCPP
 			include/Dispatcher.h
 			include/BBOFeed.h
 			include/TradeFeed.h
-			include/L2BookFeed.h)
+			include/L2BookFeed.h
+			include/WSTypes.h)
 			
 
 

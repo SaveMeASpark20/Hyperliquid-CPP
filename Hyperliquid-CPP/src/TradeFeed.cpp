@@ -17,6 +17,8 @@ void TradeFeed::parse(const json& message)
 
 	const auto& trades = message["data"];
 
+	std::cout <<"trades size: " << trades.size() << "\n";
+
 	for (const auto& t : trades)
 	{
 		Trade trade;
