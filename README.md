@@ -1,5 +1,6 @@
 # Hyperliquid-CPP
 
+
 Hyperliquid SDK for C++, replicate how python hyperliquid SDK work.
 Avail functionality is the ff.
 -Buy/long or Sell/short a coin
